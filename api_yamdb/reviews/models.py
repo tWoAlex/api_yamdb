@@ -1,6 +1,11 @@
 from django.db import models
-<<<<<<< HEAD
+
+from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
+
+
+PUBLIC_VERBOSE_LENGTH = 15
 
 
 class Review(models.Model):
@@ -39,10 +44,29 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.author
-=======
 
 
-PUBLIC_VERBOSE_LENGTH = 15
+class User(AbstractUser):
+    ADMIN = 'admin'
+    MODERATOR = 'moderator'
+    USER = 'user'
+    ROLES = ((ADMIN, 'admin'),
+             (MODERATOR, 'moderator'),
+             (USER, 'user'),)
+
+    username = models.CharField(max_length=150, blank=False, unique=True,
+                                validators=(UnicodeUsernameValidator(),))
+    email = models.EmailField(blank=False, unique=True)
+    role = models.CharField(choices=ROLES, default=USER, max_length=20)
+    bio = models.TextField(blank=True, null=True)
+
+    @property
+    def is_moderator(self):
+        return self.role == self.MODERATOR
+
+    @property
+    def is_admin(self):
+        return self.role == self.ADMIN
 
 
 class Category(models.Model):
@@ -112,4 +136,4 @@ class GenreTitle(models.Model):
 
     def __str__(self):
         return f'{self.title}: {self.genre}'
->>>>>>> 3055df8af60c8b62ad2aba66b9cc6cce184e046d
+
