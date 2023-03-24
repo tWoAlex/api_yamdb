@@ -1,12 +1,13 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
+from rest_framework import status, viewsets, filters, generics, mixins, permissions
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework import status, viewsets, filters, permissions
 
-from reviews.models import User
+
+from reviews.models import User, Category, Genre, Title
 
 from .serializers import RegistrationSerializer, TokenAproveSerializer, \
     UserSerializer
@@ -90,3 +91,22 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class CategoryViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
+                      mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    lookup_field = 'slug'
+
+
+class GenreViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
+                   mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    lookup_field = 'slug'
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
