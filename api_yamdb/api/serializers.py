@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from reviews.models import Category, Genre, Title, GenreTitle
+from reviews.models import User, Category, Genre, Title, GenreTitle
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -46,3 +46,27 @@ class TitleSerializer(serializers.ModelSerializer):
             GenreTitle.objects.get_or_create(
                 genre=genre, title=title,)
         return title
+
+
+class RegistrationSerializer(serializers.ModelSerializer):
+
+    def validate_username(self, value):
+        if value.lower() == "me":
+            raise serializers.ValidationError('Никнейм "me" запрещён')
+        return value
+
+    class Meta:
+        fields = ("username", "email")
+        model = User
+
+
+class TokenAproveSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    confirmation_code = serializers.CharField()
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ("username", "email", "first_name",
+                  "last_name", "bio", "role")
+        model = User

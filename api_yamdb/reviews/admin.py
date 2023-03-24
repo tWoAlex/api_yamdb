@@ -1,6 +1,9 @@
 from django.contrib import admin
 
-from .models import Category, Genre, Title, GenreTitle
+from .models import User, Category, Genre, Title, GenreTitle
+
+
+admin.site.register(User)
 
 
 @admin.register(Category)
@@ -31,3 +34,4 @@ class GenreTitleAdmin(admin.ModelAdmin):
     search_fields = ('title', 'genre')
     list_filter = ('title', 'genre')
     empty_value_display = '- пусто -'
+
