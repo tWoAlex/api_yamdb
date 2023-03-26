@@ -3,7 +3,7 @@ from django_filters import rest_framework as filters
 from reviews.models import Title
 
 
-class TitleFilter(filters.FilterSet):
+class TitleFilterSet(filters.FilterSet):
     name = filters.CharFilter(field_name='name',
                               lookup_expr='icontains')
     category = filters.CharFilter(field_name='category__slug',

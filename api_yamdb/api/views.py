@@ -15,7 +15,7 @@ from .serializers import (RegistrationSerializer, TokenAproveSerializer,
                           TitleSerializer, ReviewSerializer, CommentSerializer)
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly)
-from .filters import TitleFilter
+from .filters import TitleFilterSet
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly)
 
@@ -130,7 +130,7 @@ class TitleViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = TitleFilter
+    filterset_class = TitleFilterSet
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
