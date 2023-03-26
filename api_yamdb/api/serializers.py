@@ -2,8 +2,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import Avg
 from rest_framework import serializers
 
-from reviews.models import (User, Category, Genre, Title,
-                            GenreTitle, Review, Comment)
+from reviews.models import User, Category, Genre, Title, Review, Comment
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -18,37 +17,42 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
 
 
-class CategoryFromSlugSerializer(CategorySerializer):
-    def to_internal_value(self, data):
-        return Category.objects.get(slug=data)
+class CategoryFromSlugRelatedField(serializers.SlugRelatedField,
+                                   CategorySerializer):
+    queryset = Category.objects.all()
+    to_representation = CategorySerializer.to_representation
 
 
-class GenreFromSlugSerializer(CategorySerializer):
-    def to_internal_value(self, data):
-        return Genre.objects.get(slug=data)
+class GenreFromSlugRelatedField(serializers.SlugRelatedField,
+                                GenreSerializer):
+    queryset = Genre.objects.all()
+    to_representation = GenreSerializer.to_representation
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    category = CategoryFromSlugSerializer()
-    genre = GenreFromSlugSerializer(many=True)
+    category = CategoryFromSlugRelatedField(slug_field='slug')
+    genre = GenreFromSlugRelatedField(slug_field='slug', many=True)
 
     class Meta:
         model = Title
         fields = '__all__'
 
-    def validate(self, attrs):
-        print('\n\n\n\n\n')
-        print(attrs)
-        print('\n\n\n\n\n')
-        return attrs
-
-    def create(self, validated_data):
-        genres = validated_data.pop('genre')
-        title = super().create(validated_data)
-        for genre in genres:
-            GenreTitle.objects.get_or_create(
-                genre=genre, title=title)
-        return title
+    def to_internal_value(self, data):
+        print()
+        print('-' * 60)
+        for key, value in data.items():
+            print(f'{key}: {value} ({type(value)})')
+        print('-' * 60)
+        print()
+        try:
+            return super().to_internal_value(data)
+        except Exception as exc:
+            print()
+            print('-' * 60)
+            print(type(exc))
+            print(exc)
+            print('-' * 60)
+            print()
 
 
 def get_rating(self, obj):

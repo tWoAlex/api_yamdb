@@ -68,15 +68,13 @@ class Genre(models.Model):
 
 class Title(models.Model):
     category = models.ForeignKey(
-        Category,
-        null=True, on_delete=models.SET_NULL,
+        Category, null=True, on_delete=models.SET_NULL,
         related_name='titles', verbose_name='Категория'
     )
     genre = models.ManyToManyField(Genre, through='GenreTitle')
     name = models.CharField(max_length=256, verbose_name='Название')
     description = models.TextField(
-        blank=True, null=True, verbose_name='Описание'
-    )
+        blank=True, null=True, verbose_name='Описание')
     year = models.IntegerField()
 
     class Meta:

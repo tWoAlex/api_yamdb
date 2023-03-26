@@ -1,7 +1,7 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets, filters, mixins, permissions
+from rest_framework import status, viewsets, filters, mixins, generics, permissions
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
@@ -50,7 +50,7 @@ def registration(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(["POST"])
+@api_view(("POST",))
 def send_jwt_token(request):
     serializer = TokenAproveSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -77,7 +77,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(
         methods=["get", "patch", ], url_path="me", detail=False,
         permission_classes=[permissions.IsAuthenticated],
-        serializer_class=UserSerializer, )
+        serializer_class=UserSerializer)
     def self_profile(self, request):
         user = request.user
         if request.method == "GET":
@@ -100,6 +100,10 @@ class CategoryViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     lookup_field = 'slug'
+
+    pagination_class = LimitOffsetPagination
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
     permission_classes = (IsAdminOrReadOnly,)
 
 
@@ -108,13 +112,42 @@ class GenreViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     lookup_field = 'slug'
-    # permission_classes = (IsAdmin,)
+
+    pagination_class = LimitOffsetPagination
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    permission_classes = (IsAdminOrReadOnly,)
+    pagination_class = LimitOffsetPagination
+    # permission_classes = (IsAdminOrReadOnly,)
+
+
+class TitleList(generics.ListCreateAPIView, viewsets.GenericViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+
+    def create(self, request, *args, **kwargs):
+        print()
+        print('*' * 60)
+        print(request.data)
+        print('*' * 60)
+        print()
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as exc:
+            print(exc)
+            print(type(exc))
+        #  super().create(request, *args, **kwargs)
+
+
+class TitleDetail(generics.RetrieveUpdateDestroyAPIView,
+                  viewsets.GenericViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
