@@ -32,6 +32,7 @@ class GenreFromSlugRelatedField(serializers.SlugRelatedField,
 class TitleSerializer(serializers.ModelSerializer):
     category = CategoryFromSlugRelatedField(slug_field='slug')
     genre = GenreFromSlugRelatedField(slug_field='slug', many=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Title
@@ -47,11 +48,9 @@ class TitleSerializer(serializers.ModelSerializer):
                     data[key] = None
         return super().run_validation(data)
 
-
-def get_rating(self, obj):
-    rating = obj.reviews.aggregate(
-        Avg('score')).get('score__avg')
-    return round(rating, 2) if rating else rating
+    def get_rating(self, obj):
+        rating = obj.reviews.aggregate(Avg('score')).get('score__avg')
+        return round(rating, 2) if rating else rating
 
 
 class ReviewSerializer(serializers.ModelSerializer):
