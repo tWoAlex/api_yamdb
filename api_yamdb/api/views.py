@@ -1,22 +1,23 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets, filters, mixins, permissions
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
+from django_filters.rest_framework import DjangoFilterBackend
 
 from reviews.models import User, Category, Genre, Title, Review
 
 from .serializers import (RegistrationSerializer, TokenAproveSerializer,
                           UserSerializer, CategorySerializer, GenreSerializer,
-                          TitleSerializer, ReviewSerializer, CommentSerializer,
-                          ReadOnlyTitleSerializer)
+                          TitleSerializer, ReviewSerializer, CommentSerializer)
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly)
 from .filters import TitleFilter
+from .permissions import (IsAdmin, IsAdminOrReadOnly,
+                          IsAdminModeratorAuthorOrReadOnly)
 
 
 def send_confirmation_code(user):
@@ -125,15 +126,11 @@ class GenreViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
+
     pagination_class = LimitOffsetPagination
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-
-    def get_serializer_class(self):
-        if self.action in ("retrieve", "list"):
-            return ReadOnlyTitleSerializer
-        return TitleSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

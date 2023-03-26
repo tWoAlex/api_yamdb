@@ -17,29 +17,35 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
 
 
+class CategoryFromSlugRelatedField(serializers.SlugRelatedField,
+                                   CategorySerializer):
+    queryset = Category.objects.all()
+    to_representation = CategorySerializer.to_representation
+
+
+class GenreFromSlugRelatedField(serializers.SlugRelatedField,
+                                GenreSerializer):
+    queryset = Genre.objects.all()
+    to_representation = GenreSerializer.to_representation
+
+
 class TitleSerializer(serializers.ModelSerializer):
-    genre = serializers.SlugRelatedField(slug_field='slug', many=True,
-                                         queryset=Genre.objects.all())
-    category = serializers.SlugRelatedField(slug_field='slug',
-                                            queryset=Category.objects.all())
+    category = CategoryFromSlugRelatedField(slug_field='slug')
+    genre = GenreFromSlugRelatedField(slug_field='slug', many=True)
 
     class Meta:
         model = Title
         fields = '__all__'
 
-
-class ReadOnlyTitleSerializer(serializers.ModelSerializer):
-    rating = serializers.IntegerField(
-        source='reviews__score__avg', read_only=True
-    )
-    genre = GenreSerializer(many=True)
-    category = CategorySerializer()
-
-    class Meta:
-        model = Title
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
-        )
+    def run_validation(self, data):
+        data = dict(data)
+        for key, value in data.items():
+            if type(value) is list and key != 'genre':
+                if len(value) == 1:
+                    data[key] = value[0]
+                elif len(value) == 0:
+                    data[key] = None
+        return super().run_validation(data)
 
 
 def get_rating(self, obj):
