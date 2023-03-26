@@ -6,13 +6,16 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from django_filters import rest_framework as rf_filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 from reviews.models import User, Category, Genre, Title, Review
 
 from .serializers import (RegistrationSerializer, TokenAproveSerializer,
                           UserSerializer, CategorySerializer, GenreSerializer,
                           TitleSerializer, ReviewSerializer, CommentSerializer)
+from .permissions import (IsAdmin, IsAdminOrReadOnly,
+                          IsAdminModeratorAuthorOrReadOnly)
+from .filters import TitleFilter
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly)
 
@@ -120,23 +123,14 @@ class GenreViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
     permission_classes = (IsAdminOrReadOnly,)
 
 
-class TitleFilterSet(rf_filters.FilterSet):
-    category = rf_filters.CharFilter(field_name='category__slug')
-    genre = rf_filters.CharFilter(field_name='genre__slug')
-
-    class Meta:
-        model = Title
-        fields = ('name', 'year')
-
-
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
 
     pagination_class = LimitOffsetPagination
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (rf_filters.DjangoFilterBackend,)
-    filterset_class = TitleFilterSet
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

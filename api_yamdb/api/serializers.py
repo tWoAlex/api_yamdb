@@ -64,7 +64,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Review
-        read_only_fields = ('title', )
+        read_only_fields = ('title',)
 
     def validate(self, data):
         if self.context['request'].method == 'POST':
