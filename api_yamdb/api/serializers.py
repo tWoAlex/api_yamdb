@@ -37,22 +37,15 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
 
-    def to_internal_value(self, data):
-        print()
-        print('-' * 60)
+    def run_validation(self, data):
+        data = dict(data)
         for key, value in data.items():
-            print(f'{key}: {value} ({type(value)})')
-        print('-' * 60)
-        print()
-        try:
-            return super().to_internal_value(data)
-        except Exception as exc:
-            print()
-            print('-' * 60)
-            print(type(exc))
-            print(exc)
-            print('-' * 60)
-            print()
+            if type(value) is list and key != 'genre':
+                if len(value) == 1:
+                    data[key] = value[0]
+                elif len(value) == 0:
+                    data[key] = None
+        return super().run_validation(data)
 
 
 def get_rating(self, obj):

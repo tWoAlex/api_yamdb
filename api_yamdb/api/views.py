@@ -1,11 +1,12 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets, filters, mixins, generics, permissions
+from rest_framework import status, viewsets, filters, mixins, permissions
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
+from django_filters import rest_framework as rf_filters
 
 from reviews.models import User, Category, Genre, Title, Review
 
@@ -119,35 +120,23 @@ class GenreViewSet(mixins.ListModelMixin, mixins.CreateModelMixin,
     permission_classes = (IsAdminOrReadOnly,)
 
 
+class TitleFilterSet(rf_filters.FilterSet):
+    category = rf_filters.CharFilter(field_name='category__slug')
+    genre = rf_filters.CharFilter(field_name='genre__slug')
+
+    class Meta:
+        model = Title
+        fields = ('name', 'year')
+
+
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
+
     pagination_class = LimitOffsetPagination
-    # permission_classes = (IsAdminOrReadOnly,)
-
-
-class TitleList(generics.ListCreateAPIView, viewsets.GenericViewSet):
-    queryset = Title.objects.all()
-    serializer_class = TitleSerializer
-
-    def create(self, request, *args, **kwargs):
-        print()
-        print('*' * 60)
-        print(request.data)
-        print('*' * 60)
-        print()
-        try:
-            return super().create(request, *args, **kwargs)
-        except Exception as exc:
-            print(exc)
-            print(type(exc))
-        #  super().create(request, *args, **kwargs)
-
-
-class TitleDetail(generics.RetrieveUpdateDestroyAPIView,
-                  viewsets.GenericViewSet):
-    queryset = Title.objects.all()
-    serializer_class = TitleSerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (rf_filters.DjangoFilterBackend,)
+    filterset_class = TitleFilterSet
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
