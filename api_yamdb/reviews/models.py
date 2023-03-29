@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 PUBLIC_VERBOSE_LENGTH = 15
@@ -67,15 +68,13 @@ class Genre(models.Model):
 
 class Title(models.Model):
     category = models.ForeignKey(
-        Category,
-        null=True, on_delete=models.SET_NULL,
+        Category, null=True, on_delete=models.SET_NULL,
         related_name='titles', verbose_name='Категория'
     )
     genre = models.ManyToManyField(Genre, through='GenreTitle')
     name = models.CharField(max_length=256, verbose_name='Название')
     description = models.TextField(
-        blank=True, null=True, verbose_name='Описание'
-    )
+        blank=True, null=True, verbose_name='Описание')
     year = models.IntegerField()
 
     class Meta:
@@ -97,3 +96,40 @@ class GenreTitle(models.Model):
     def __str__(self):
         return f'{self.title}: {self.genre}'
 
+
+class Review(models.Model):
+    title = models.ForeignKey(
+        Title, on_delete=models.CASCADE, related_name='reviews')
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='reviews')
+    pub_date = models.DateTimeField(
+        'Дата публикации', auto_now_add=True, db_index=True)
+    text = models.TextField()
+    score = models.IntegerField(
+        'Оценка',
+        default=0,
+        validators=[
+            MaxValueValidator(10),
+            MinValueValidator(1)
+        ],
+    )
+
+    class Meta:
+        ordering = ['-pub_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'], name="unique_review")
+        ]
+
+
+class Comment(models.Model):
+    review = models.ForeignKey(
+        Review, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='comments')
+    pub_date = models.DateTimeField(
+        'Дата публикации', auto_now_add=True, db_index=True)
+    text = models.TextField()
+
+    def __str__(self):
+        return self.author
