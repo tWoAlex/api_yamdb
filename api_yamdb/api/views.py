@@ -1,14 +1,15 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets, filters, mixins, permissions
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 from django_filters.rest_framework import DjangoFilterBackend
 
-from reviews.models import User, Category, Genre, Title, Review
+from reviews.models import Category, Genre, Title, Review
 
 from .serializers import (RegistrationSerializer, TokenAproveSerializer,
                           UserSerializer, CategorySerializer, GenreSerializer,
@@ -19,12 +20,15 @@ from .filters import TitleFilter
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly)
 
+User = get_user_model()
+
 
 def send_confirmation_code(user):
-    confirmation_code = default_token_generator.make_token(user)
+    User.confirmation_code = default_token_generator.make_token(user)
+
     send_mail(
         message=(
-            f"Ваш код подтверждения: {confirmation_code}."
+            f'Ваш код подтверждения: {User.confirmation_code}.'
             ' Пожалуйста, отправьте его POST запросом по схеме: \n{"username":'
             '<Никнейм, указанный при регистрации> \n"confirmation_code":'
             '<полученный код>}'
@@ -36,6 +40,7 @@ def send_confirmation_code(user):
 
 
 @api_view(("POST",))
+@permission_classes([permissions.AllowAny])
 def registration(request):
     serializer = RegistrationSerializer(data=request.data)
     username = serializer.initial_data.get("username")
@@ -55,6 +60,7 @@ def registration(request):
 
 
 @api_view(("POST",))
+@permission_classes([permissions.AllowAny])
 def send_jwt_token(request):
     serializer = TokenAproveSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
