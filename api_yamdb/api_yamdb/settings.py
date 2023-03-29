@@ -19,8 +19,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_filters',
-    'reviews.apps.ReviewsConfig',
-    'api.apps.ApiConfig',
+    'reviews',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -99,7 +99,6 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 10,
 }
 SIMPLE_JWT = {
-    # Устанавливаем срок жизни токена
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
@@ -109,3 +108,5 @@ AUTH_USER_MODEL = 'reviews.User'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 DEFAULT_FROM_EMAIL = 'admin@yamdb.com'
+
+TEXT_LENGHT = 25
