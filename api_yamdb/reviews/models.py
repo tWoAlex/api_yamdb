@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
@@ -99,15 +100,22 @@ class GenreTitle(models.Model):
 
 class Review(models.Model):
     title = models.ForeignKey(
-        Title, on_delete=models.CASCADE, related_name='reviews')
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Заголовок')
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews')
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Автор')
     pub_date = models.DateTimeField(
-        'Дата публикации', auto_now_add=True, db_index=True)
-    text = models.TextField()
+        'Дата публикации',
+        auto_now_add=True,
+        db_index=True)
+    text = models.TextField(verbose_name='Содержание')
     score = models.IntegerField(
         'Оценка',
-        default=0,
         validators=[
             MaxValueValidator(10),
             MinValueValidator(1)
@@ -115,6 +123,8 @@ class Review(models.Model):
     )
 
     class Meta:
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
         ordering = ['-pub_date']
         constraints = [
             models.UniqueConstraint(
@@ -132,4 +142,4 @@ class Comment(models.Model):
     text = models.TextField()
 
     def __str__(self):
-        return self.author
+        return self.text[: settings.TEXT_LENGHT]

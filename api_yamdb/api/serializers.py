@@ -1,4 +1,3 @@
-from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import Avg
 from rest_framework import serializers
 
@@ -56,14 +55,10 @@ class TitleSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         read_only=True, slug_field='username')
-    score = serializers.IntegerField(
-        validators=[MinValueValidator(0), MaxValueValidator(10)]
-    )
 
     class Meta:
-        fields = '__all__'
+        fields = ('id', 'author', 'pub_date', 'score', 'text')
         model = Review
-        read_only_fields = ('title',)
 
     def validate(self, data):
         if self.context['request'].method == 'POST':
