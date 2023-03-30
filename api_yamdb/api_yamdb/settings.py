@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'django_filters',
     'reviews',
     'api',
+    'users',
 ]
 
 MIDDLEWARE = [
@@ -103,7 +104,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-AUTH_USER_MODEL = 'reviews.User'
+AUTH_USER_MODEL = 'users.User'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
