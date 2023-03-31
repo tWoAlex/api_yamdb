@@ -7,10 +7,10 @@ class TitleFilterSet(filters.FilterSet):
     name = filters.CharFilter(field_name='name',
                               lookup_expr='icontains')
     category = filters.CharFilter(field_name='category__slug',
-                                  lookup_expr='icontains')
+                                  lookup_expr='iexact')
     genre = filters.CharFilter(field_name='genre__slug',
-                               lookup_expr='icontains')
+                               lookup_expr='iexact')
 
     class Meta:
         model = Title
-        fields = ['name', 'year', 'genre', 'category']
+        fields = ('name', 'year', 'genre', 'category')

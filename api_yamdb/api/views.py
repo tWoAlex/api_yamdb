@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets, filters, mixins, permissions
 from rest_framework.pagination import LimitOffsetPagination
@@ -10,15 +11,13 @@ from rest_framework_simplejwt.tokens import AccessToken
 from django_filters.rest_framework import DjangoFilterBackend
 
 from reviews.models import Category, Genre, Title, Review, Comment
-
 from .serializers import (RegistrationSerializer, TokenAproveSerializer,
                           UserSerializer, CategorySerializer, GenreSerializer,
                           TitleSerializer, ReviewSerializer, CommentSerializer)
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly)
 from .filters import TitleFilterSet
-from .permissions import (IsAdmin, IsAdminOrReadOnly,
-                          IsAdminModeratorAuthorOrReadOnly)
+
 
 User = get_user_model()
 
@@ -126,7 +125,7 @@ class GenreViewSet(ListCreateDestroyViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
     serializer_class = TitleSerializer
 
     pagination_class = LimitOffsetPagination

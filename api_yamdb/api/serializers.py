@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from reviews.models import Category, Genre, Title, Review, Comment
@@ -20,40 +19,25 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
 
 
-class CategoryFromSlugRelatedField(serializers.SlugRelatedField,
-                                   CategorySerializer):
-    queryset = Category.objects.all()
-    to_representation = CategorySerializer.to_representation
-
-
-class GenreFromSlugRelatedField(serializers.SlugRelatedField,
-                                GenreSerializer):
-    queryset = Genre.objects.all()
-    to_representation = GenreSerializer.to_representation
-
-
 class TitleSerializer(serializers.ModelSerializer):
-    category = CategoryFromSlugRelatedField(slug_field='slug')
-    genre = GenreFromSlugRelatedField(slug_field='slug', many=True)
-    rating = serializers.SerializerMethodField()
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(), slug_field='slug')
+    genre = serializers.SlugRelatedField(
+        queryset=Genre.objects.all(), slug_field='slug', many=True)
+    rating = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Title
         fields = '__all__'
 
-    def run_validation(self, data):
-        data = dict(data)
-        for key, value in data.items():
-            if type(value) is list and key != 'genre':
-                if len(value) == 1:
-                    data[key] = value[0]
-                elif len(value) == 0:
-                    data[key] = None
-        return super().run_validation(data)
+    def to_representation(self, instance):
+        category = CategorySerializer().to_representation(instance.category)
+        genre = GenreSerializer(many=True).to_representation(instance.genre)
 
-    def get_rating(self, obj):
-        rating = obj.reviews.aggregate(Avg('score')).get('score__avg')
-        return round(rating, 2) if rating else rating
+        base = super().to_representation(instance)
+        base['category'] = category
+        base['genre'] = genre
+        return base
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -69,11 +53,11 @@ class ReviewSerializer(serializers.ModelSerializer):
             title_id = (
                 self.context['request'].parser_context['kwargs']['title_id']
             )
+            get_object_or_404(Title, pk=title_id)
             user = self.context['request'].user
-            if user.reviews.filter(title_id=title_id).exists():
+            if user.reviews.filter().exists():
                 raise serializers.ValidationError(
-                    'На одно произведение можно оставлять только один отзыв'
-                )
+                    'На одно произведение можно оставлять только один отзыв')
         return data
 
 
@@ -87,14 +71,13 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-
     def validate_username(self, value):
         if value.lower() == "me":
             raise serializers.ValidationError('Никнейм "me" запрещён')
         return value
 
     class Meta:
-        fields = ("username", "email")
+        fields = ('username', 'email')
         model = User
 
 
@@ -105,6 +88,6 @@ class TokenAproveSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ("username", "email", "first_name",
-                  "last_name", "bio", "role")
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
         model = User
