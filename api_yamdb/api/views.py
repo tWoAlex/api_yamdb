@@ -1,30 +1,33 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets, filters, mixins, permissions
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 from django_filters.rest_framework import DjangoFilterBackend
 
-from reviews.models import User, Category, Genre, Title, Review
-
+from reviews.models import Category, Genre, Title, Review, Comment
 from .serializers import (RegistrationSerializer, TokenAproveSerializer,
                           UserSerializer, CategorySerializer, GenreSerializer,
                           TitleSerializer, ReviewSerializer, CommentSerializer)
 from .permissions import (IsAdmin, IsAdminOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly)
 from .filters import TitleFilterSet
-from .permissions import (IsAdmin, IsAdminOrReadOnly,
-                          IsAdminModeratorAuthorOrReadOnly)
+
+
+User = get_user_model()
 
 
 def send_confirmation_code(user):
-    confirmation_code = default_token_generator.make_token(user)
+    User.confirmation_code = default_token_generator.make_token(user)
+
     send_mail(
         message=(
-            f"Ваш код подтверждения: {confirmation_code}."
+            f'Ваш код подтверждения: {User.confirmation_code}.'
             ' Пожалуйста, отправьте его POST запросом по схеме: \n{"username":'
             '<Никнейм, указанный при регистрации> \n"confirmation_code":'
             '<полученный код>}'
@@ -36,6 +39,7 @@ def send_confirmation_code(user):
 
 
 @api_view(("POST",))
+@permission_classes([permissions.AllowAny])
 def registration(request):
     serializer = RegistrationSerializer(data=request.data)
     username = serializer.initial_data.get("username")
@@ -55,6 +59,7 @@ def registration(request):
 
 
 @api_view(("POST",))
+@permission_classes([permissions.AllowAny])
 def send_jwt_token(request):
     serializer = TokenAproveSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -120,7 +125,7 @@ class GenreViewSet(ListCreateDestroyViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
     serializer_class = TitleSerializer
 
     pagination_class = LimitOffsetPagination
@@ -135,8 +140,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
 
     def get_queryset(self):
-        title = get_object_or_404(Title, id=self.kwargs['title_id'])
-        return title.reviews.all()
+        title = Review.objects.filter(title__id=self.kwargs.get('title_id'))
+        return title
 
     def perform_create(self, serializer):
         title = get_object_or_404(Title, pk=self.kwargs['title_id'])
@@ -148,8 +153,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
 
     def get_queryset(self):
-        review = get_object_or_404(Review, pk=self.kwargs['review_id'])
-        return review.comments.all()
+        review = Comment.objects.filter(review_id=self.kwargs.get('review_id'))
+        return review
 
     def perform_create(self, serializer):
         review = get_object_or_404(Review, pk=self.kwargs['review_id'])
