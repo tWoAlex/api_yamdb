@@ -98,6 +98,14 @@ class RegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Никнейм "me" запрещён')
         return value
 
+    def run_validation(self, data):
+        username = self.initial_data.get('username')
+        email = self.initial_data.get('email')
+        if not User.objects.filter(username=username, email=email).exists():
+            super().run_validation(data)
+        return data
+
+
     class Meta:
         fields = ("username", "email")
         model = User

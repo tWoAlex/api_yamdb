@@ -15,7 +15,7 @@ class User(AbstractUser):
     role = models.CharField(choices=Roles.choices, default=Roles.USER,
                             max_length=20)
     bio = models.TextField(blank=True, null=True)
-    confirmation_code = models.TextField()
+    confirmation_code = models.CharField(max_length=150, blank=True)
 
     @property
     def is_moderator(self):
