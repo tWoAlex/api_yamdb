@@ -1,4 +1,5 @@
 import csv
+import logging
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
@@ -25,12 +26,13 @@ MODEL_TO_FILE = [
 
 class Command(BaseCommand):
     help = "Loads data from static/data/*.csv"
+    logger = logging.getLogger('main')
 
     def handle(self, *args, **options):
         for model, filepath, related in MODEL_TO_FILE:
             with open(DIR / filepath, encoding='utf-8') as file:
                 reader = csv.DictReader(file)
-                print(f'Loading {filepath}')
+                self.logger.log(logging.WARNING, f'Loading {filepath}')
                 for row in reader:
                     for key, value in row.items():
                         if key in related:

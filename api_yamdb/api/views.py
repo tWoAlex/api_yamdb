@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 from django_filters.rest_framework import DjangoFilterBackend
 
-from reviews.models import Category, Genre, Title, Review, Comment
+from reviews.models import Category, Genre, Title, Review
 from .serializers import (RegistrationSerializer, TokenAproveSerializer,
                           UserSerializer, CategorySerializer, GenreSerializer,
                           TitleSerializer, ReviewSerializer, CommentSerializer)
@@ -23,7 +23,7 @@ User = get_user_model()
 
 
 def send_confirmation_code(user):
-    User.confirmation_code = default_token_generator.make_token(user)
+    user.confirmation_code = default_token_generator.make_token(user)
 
     send_mail(
         message=(
@@ -44,16 +44,15 @@ def registration(request):
     serializer = RegistrationSerializer(data=request.data)
     username = serializer.initial_data.get("username")
     email = serializer.initial_data.get("email")
-    user = None
-    if username:
-        user = User.objects.filter(username=username, email=email).first()
+    user = User.objects.filter(username=username, email=email).first()
     if user:
         send_confirmation_code(user)
         return Response(serializer.initial_data, status=status.HTTP_200_OK)
-
     serializer.is_valid(raise_exception=True)
     serializer.save()
-    user = User.objects.get(username=serializer.validated_data["username"])
+    user = User.objects.get(
+        username=serializer.validated_data["username"],
+        email=serializer.validated_data["email"])
     send_confirmation_code(user)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -71,7 +70,8 @@ def send_jwt_token(request):
         token = AccessToken.for_user(user)
         return Response({"token": str(token)}, status=status.HTTP_200_OK)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(
+        "Неверный код подтверждения", status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -84,21 +84,20 @@ class UserViewSet(viewsets.ModelViewSet):
     http_method_names = ('get', 'patch', 'post', 'delete')
 
     @action(
-        methods=["get", "patch", ], url_path="me", detail=False,
+        methods=["get", "patch", ], detail=False,
         permission_classes=[permissions.IsAuthenticated],
         serializer_class=UserSerializer)
-    def self_profile(self, request):
+    def me(self, request):
         user = request.user
         if request.method == "GET":
             serializer = self.get_serializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        if request.method == "PATCH":
+        elif request.method == "PATCH":
             serializer = self.get_serializer(user, data=request.data,
                                              partial=True)
-            serializer.Meta.read_only_fields = ('role',)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            serializer.save(role=user.role)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -153,9 +152,15 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdminModeratorAuthorOrReadOnly,)
 
     def get_queryset(self):
-        review = Comment.objects.filter(review_id=self.kwargs.get('review_id'))
-        return review
+        review = get_object_or_404(
+            Review,
+            pk=self.kwargs.get('review_id'),
+            title_id=self.kwargs.get('title_id'))
+        return review.comments.all()
 
     def perform_create(self, serializer):
-        review = get_object_or_404(Review, pk=self.kwargs['review_id'])
+        review = get_object_or_404(
+            Review,
+            pk=self.kwargs['review_id'],
+            title_id=self.kwargs.get('title_id'))
         serializer.save(author=self.request.user, review=review)
