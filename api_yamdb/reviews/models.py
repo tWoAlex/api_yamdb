@@ -1,8 +1,9 @@
 from datetime import datetime as dt
 
-from django.contrib.auth import get_user_model
 from django.db import models
+from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.exceptions import ValidationError
 
 
 User = get_user_model()
@@ -36,6 +37,11 @@ class Genre(models.Model):
         return self.name[:15]
 
 
+def correct_year(value):
+    if not value <= dt.today().year:
+        raise ValidationError("Нельзя предсказывать будущие произведения")
+
+
 class Title(models.Model):
     category = models.ForeignKey(
         Category, null=True, on_delete=models.SET_NULL,
@@ -47,8 +53,7 @@ class Title(models.Model):
         blank=True, null=True, verbose_name='Описание')
     year = models.SmallIntegerField(
         verbose_name='Год', db_index=True,
-        validators=(MaxValueValidator(
-            dt.today().year, "Нельзя предсказывать будущие произведения"),))
+        validators=(correct_year,))
 
     class Meta:
         verbose_name = 'Произведение'

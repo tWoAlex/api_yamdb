@@ -117,5 +117,3 @@ AUTH_USER_MODEL = 'users.User'
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 DEFAULT_FROM_EMAIL = 'admin@yamdb.com'
-
-TEXT_LENGHT = 25
