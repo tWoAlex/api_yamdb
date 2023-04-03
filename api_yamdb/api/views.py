@@ -90,7 +90,7 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(user, data=request.data,
                                              partial=True)
             serializer.is_valid(raise_exception=True)
-            serializer.save(role=user.role)
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -154,6 +154,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         review = get_object_or_404(
             Review,
-            pk=self.kwargs['review_id'],
+            pk=self.kwargs.get('review_id'),
             title_id=self.kwargs.get('title_id'))
         serializer.save(author=self.request.user, review=review)
