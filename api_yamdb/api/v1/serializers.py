@@ -76,6 +76,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Никнейм "me" запрещён')
         return value
 
+    def run_validation(self, data):
+        username = self.initial_data.get('username')
+        email = self.initial_data.get('email')
+        if not User.objects.filter(username=username, email=email).exists():
+            super().run_validation(data)
+        return data
+
     class Meta:
         fields = ('username', 'email')
         model = User
@@ -88,6 +95,10 @@ class TokenAproveSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
+        model = User
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-        model = User
+
+    def update(self, instance, validated_data):
+        validated_data.pop('role', None)
+        return super().update(instance, validated_data)
