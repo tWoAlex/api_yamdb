@@ -24,10 +24,10 @@ User = get_user_model()
 
 def send_confirmation_code(user):
     user.confirmation_code = default_token_generator.make_token(user)
-
+    user.save()
     send_mail(
         message=(
-            f'Ваш код подтверждения: {User.confirmation_code}.'
+            f'Ваш код подтверждения: {user.confirmation_code}.'
             ' Пожалуйста, отправьте его POST запросом по схеме: \n{"username":'
             '<Никнейм, указанный при регистрации> \n"confirmation_code":'
             '<полученный код>}'
@@ -42,15 +42,8 @@ def send_confirmation_code(user):
 @permission_classes([permissions.AllowAny])
 def registration(request):
     serializer = RegistrationSerializer(data=request.data)
-    username = serializer.initial_data.get("username")
-    email = serializer.initial_data.get("email")
-    user = User.objects.filter(username=username, email=email).first()
-    if user:
-        send_confirmation_code(user)
-        return Response(serializer.initial_data, status=status.HTTP_200_OK)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
-    user = User.objects.get(
+    user, _ = User.objects.get_or_create(
         username=serializer.validated_data["username"],
         email=serializer.validated_data["email"])
     send_confirmation_code(user)
