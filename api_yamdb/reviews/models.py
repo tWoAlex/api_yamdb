@@ -1,10 +1,8 @@
-from datetime import datetime as dt
-
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.core.exceptions import ValidationError
 
+from .validators import correct_year
 
 User = get_user_model()
 
@@ -35,11 +33,6 @@ class Genre(models.Model):
 
     def __str__(self):
         return self.name[:15]
-
-
-def correct_year(value):
-    if not value <= dt.today().year:
-        raise ValidationError("Нельзя предсказывать будущие произведения")
 
 
 class Title(models.Model):
